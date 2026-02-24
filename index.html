@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼포로 가는 길</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;700&family=Gowun+Batang:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --sky-top: #1a1a2e;
+    --sky-mid: #2d3561;
+    --sky-low: #c77d4a;
+    --horizon: #e8956d;
+    --sea-top: #1e3a5f;
+    --sea-mid: #0d2137;
+    --sea-dark: #071520;
+    --sand: #c4a882;
+    --sand-dark: #8a6f4e;
+    --foam: rgba(255,255,255,0.7);
+    --cloud: rgba(255, 220, 180, 0.85);
+  }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--sky-top);
+    font-family: 'Gowun Batang', serif;
+    cursor: default;
+    user-select: none;
+  }
+
+  canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .poem {
+    text-align: center;
+    color: rgba(255, 240, 210, 0.0);
+    animation: fadePoem 3s ease 1.5s forwards;
+    position: relative;
+  }
+
+  @keyframes fadePoem {
+    to { color: rgba(255, 240, 210, 0.92); }
+  }
+
+  .poem h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 300;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    letter-spacing: 0.4em;
+    text-shadow: 0 0 40px rgba(200, 130, 60, 0.8), 0 2px 20px rgba(0,0,0,0.6);
+    margin-bottom: 1.2rem;
+    animation: floatTitle 6s ease-in-out infinite;
+  }
+
+  @keyframes floatTitle {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .poem .divider {
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,200,120,0.7), transparent);
+    margin: 0 auto 1.2rem;
+  }
+
+  .poem p {
+    font-size: clamp(0.75rem, 1.5vw, 0.95rem);
+    letter-spacing: 0.25em;
+    line-height: 2.4em;
+    text-shadow: 0 1px 15px rgba(0,0,0,0.7);
+    opacity: 0.88;
+  }
+
+  .poem .subtitle {
+    margin-top: 1.8rem;
+    font-size: clamp(0.65rem, 1.2vw, 0.78rem);
+    letter-spacing: 0.5em;
+    opacity: 0.55;
+    color: rgba(255, 200, 150, 0.7);
+    animation: fadePoem 3s ease 3s forwards;
+    color: rgba(255, 200, 150, 0);
+  }
+
+  .vignette {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* Grain */
+  #musicBtn {
+    position: fixed;
+    bottom: 28px;
+    right: 32px;
+    z-index: 20;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(255, 200, 120, 0.15);
+    border: 1px solid rgba(255, 210, 140, 0.45);
+    color: rgba(255, 230, 170, 0.85);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.3s, transform 0.2s;
+    pointer-events: all;
+    user-select: none;
+  }
+  #musicBtn:hover {
+    background: rgba(255, 200, 120, 0.3);
+    transform: scale(1.1);
+  }
+  #musicBtn.paused {
+    opacity: 0.5;
+  }
+
+  .grain {
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 6;
+    animation: grainAnim 0.5s steps(1) infinite;
+  }
+
+  @keyframes grainAnim {
+    0%   { transform: translate(0,0); }
+    10%  { transform: translate(-3%,-3%); }
+    20%  { transform: translate(3%,3%); }
+    30%  { transform: translate(-3%,3%); }
+    40%  { transform: translate(3%,-3%); }
+    50%  { transform: translate(-3%,0); }
+    60%  { transform: translate(3%,0); }
+    70%  { transform: translate(0,-3%); }
+    80%  { transform: translate(0,3%); }
+    90%  { transform: translate(-3%,-3%); }
+    100% { transform: translate(0,0); }
+  }
+</style>
+</head>
+<body>
+
+<audio id="bgm" src="bg.mp3" loop preload="auto"></audio>
+
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+
+<div id="musicBtn" class="paused" onclick="toggleMusic()" title="음악 재생/정지">♪</div>
+
+<div class="overlay">
+  <div class="poem">
+    <h1>삼포로 가는 길</h1>
+    <div class="divider"></div>
+    <p>
+      주어진 시간에 충실하고<br>
+      흐르는 구름처럼 유유히 살자
+    </p>
+    <div class="subtitle">— 어딘가 바다 너머로 · 서귀포 손님 —</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+
+let W, H, skyH, seaH, sandH;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  skyH = H * 0.58;
+  seaH = H * 0.30;
+  sandH = H * 0.12;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── CLOUDS ──────────────────────────────────────────
+const clouds = [];
+function makeCloud(x, y, scale, speed, alpha) {
+  const puffs = [];
+  const n = 5 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < n; i++) {
+    puffs.push({
+      dx: (Math.random() - 0.5) * 120 * scale,
+      dy: (Math.random() - 0.3) * 40 * scale,
+      r: (20 + Math.random() * 35) * scale
+    });
+  }
+  return { x, y, speed, alpha, puffs };
+}
+
+for (let i = 0; i < 8; i++) {
+  clouds.push(makeCloud(
+    Math.random() * W * 1.5 - W * 0.2,
+    H * 0.05 + Math.random() * H * 0.38,
+    0.4 + Math.random() * 1.0,
+    0.12 + Math.random() * 0.25,
+    0.55 + Math.random() * 0.35
+  ));
+}
+
+function drawCloud(cloud, time) {
+  const glow = Math.sin(time * 0.0005 + cloud.x) * 0.05;
+  ctx.save();
+
+  // Shadow / depth layer first
+  ctx.globalAlpha = cloud.alpha * 0.45;
+  for (const p of cloud.puffs) {
+    const cx = cloud.x + p.dx + 3;
+    const cy = cloud.y + p.dy + 6;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, p.r);
+    grad.addColorStop(0, `rgba(90, 50, 20, 0.7)`);
+    grad.addColorStop(0.6, `rgba(60, 30, 10, 0.3)`);
+    grad.addColorStop(1, `rgba(0,0,0,0)`);
+    ctx.beginPath();
+    ctx.arc(cx, cy, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // Main cloud body — solid base
+  ctx.globalAlpha = cloud.alpha * 0.92;
+  for (const p of cloud.puffs) {
+    const cx = cloud.x + p.dx;
+    const cy = cloud.y + p.dy;
+    ctx.beginPath();
+    ctx.arc(cx, cy, p.r * 0.88, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(235, 175, 100, 0.75)`;
+    ctx.fill();
+  }
+
+  // Bright highlight on top
+  ctx.globalAlpha = cloud.alpha;
+  for (const p of cloud.puffs) {
+    const cx = cloud.x + p.dx;
+    const cy = cloud.y + p.dy;
+    const grad = ctx.createRadialGradient(
+      cx - p.r * 0.15, cy - p.r * 0.35, p.r * 0.05,
+      cx, cy, p.r
+    );
+    grad.addColorStop(0, `rgba(255, 245, 215, ${0.98 + glow})`);
+    grad.addColorStop(0.25, `rgba(255, 220, 160, ${0.88 + glow})`);
+    grad.addColorStop(0.55, `rgba(220, 160, 90, ${0.6})`);
+    grad.addColorStop(0.8, `rgba(160, 90, 40, 0.2)`);
+    grad.addColorStop(1, `rgba(100, 50, 10, 0.0)`);
+    ctx.beginPath();
+    ctx.arc(cx, cy, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // Crisp edge outline (subtle)
+  ctx.globalAlpha = cloud.alpha * 0.22;
+  for (const p of cloud.puffs) {
+    const cx = cloud.x + p.dx;
+    const cy = cloud.y + p.dy;
+    ctx.beginPath();
+    ctx.arc(cx, cy, p.r * 0.86, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 230, 170, 0.9)`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+// ── WAVES ────────────────────────────────────────────
+const waves = [];
+for (let i = 0; i < 5; i++) {
+  waves.push({
+    speed: 0.3 + i * 0.12,
+    amp: 5 + i * 3,
+    freq: 0.008 + i * 0.003,
+    phase: Math.random() * Math.PI * 2,
+    y: skyH + (seaH * (i / 5)),
+    alpha: 0.12 + i * 0.06
+  });
+}
+
+// ── STARS ─────────────────────────────────────────────
+const stars = [];
+for (let i = 0; i < 90; i++) {
+  stars.push({
+    x: Math.random(),
+    y: Math.random() * 0.45,
+    r: Math.random() * 1.4 + 0.3,
+    twinkle: Math.random() * Math.PI * 2
+  });
+}
+
+// ── BIRDS ─────────────────────────────────────────────
+const birds = [];
+for (let i = 0; i < 4; i++) {
+  birds.push({
+    x: Math.random() * W,
+    y: H * (0.15 + Math.random() * 0.3),
+    speed: 0.4 + Math.random() * 0.5,
+    wing: Math.random() * Math.PI * 2,
+    scale: 0.5 + Math.random() * 0.8
+  });
+}
+
+function drawBird(b, time) {
+  const wingAngle = Math.sin(b.wing + time * 0.004 * b.speed * 3) * 0.4;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.scale(b.scale, b.scale);
+  ctx.strokeStyle = 'rgba(255, 210, 160, 0.7)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(-8, 0);
+  ctx.quadraticCurveTo(-4, wingAngle * 6, 0, 0);
+  ctx.quadraticCurveTo(4, wingAngle * 6, 8, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── FOAM PARTICLES ────────────────────────────────────
+const foams = [];
+for (let i = 0; i < 30; i++) {
+  foams.push({
+    x: Math.random(),
+    prog: Math.random(),
+    y: 0,
+    speed: 0.003 + Math.random() * 0.004,
+    alpha: 0.3 + Math.random() * 0.4,
+    size: 1 + Math.random() * 3
+  });
+}
+
+// ── MAIN DRAW ─────────────────────────────────────────
+let t = 0;
+function draw(time) {
+  t = time;
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky gradient (sunset/dusk)
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, skyH);
+  skyGrad.addColorStop(0, '#0c0e1f');
+  skyGrad.addColorStop(0.3, '#1e2756');
+  skyGrad.addColorStop(0.65, '#7a3d2a');
+  skyGrad.addColorStop(0.85, '#c76840');
+  skyGrad.addColorStop(1, '#e8956d');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, skyH);
+
+  // Stars
+  for (const s of stars) {
+    const twinkle = Math.sin(s.twinkle + time * 0.001) * 0.4 + 0.6;
+    ctx.globalAlpha = twinkle * 0.75;
+    ctx.fillStyle = 'rgba(255, 235, 200, 1)';
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Horizon glow
+  const horizGrad = ctx.createRadialGradient(W * 0.5, skyH, 0, W * 0.5, skyH, W * 0.6);
+  horizGrad.addColorStop(0, 'rgba(240, 140, 60, 0.55)');
+  horizGrad.addColorStop(0.4, 'rgba(200, 80, 40, 0.2)');
+  horizGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = horizGrad;
+  ctx.fillRect(0, skyH - H * 0.25, W, H * 0.35);
+
+  // Moon / Sun
+  const sunX = W * 0.68, sunY = skyH * 0.72;
+  const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
+  sunGrad.addColorStop(0, 'rgba(255, 220, 130, 0.95)');
+  sunGrad.addColorStop(0.3, 'rgba(240, 160, 60, 0.6)');
+  sunGrad.addColorStop(1, 'rgba(200, 80, 20, 0)');
+  ctx.fillStyle = sunGrad;
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255, 225, 140, 0.92)';
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Sunlight reflection on sea
+  const reflectGrad = ctx.createLinearGradient(W * 0.4, skyH, W * 0.8, skyH + seaH);
+  reflectGrad.addColorStop(0, 'rgba(255, 180, 70, 0.3)');
+  reflectGrad.addColorStop(1, 'rgba(255, 120, 30, 0.0)');
+  ctx.fillStyle = reflectGrad;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.5, skyH);
+  ctx.lineTo(W * 0.8, skyH);
+  ctx.lineTo(W, skyH + seaH * 0.8);
+  ctx.lineTo(W * 0.25, skyH + seaH * 0.8);
+  ctx.closePath();
+  ctx.fill();
+
+  // Clouds
+  for (const cloud of clouds) {
+    cloud.x += cloud.speed;
+    if (cloud.x > W + 200) cloud.x = -300;
+    drawCloud(cloud, time);
+  }
+
+  // Sea
+  const seaGrad = ctx.createLinearGradient(0, skyH, 0, skyH + seaH);
+  seaGrad.addColorStop(0, '#1a4a7a');
+  seaGrad.addColorStop(0.4, '#0e2e50');
+  seaGrad.addColorStop(1, '#061828');
+  ctx.fillStyle = seaGrad;
+  ctx.fillRect(0, skyH, W, seaH);
+
+  // Wave lines
+  for (const wave of waves) {
+    ctx.beginPath();
+    ctx.globalAlpha = wave.alpha;
+    const wy = wave.y + Math.sin(time * 0.0005) * 3;
+    for (let x = 0; x <= W; x += 3) {
+      const y = wy + Math.sin(x * wave.freq + time * wave.speed * 0.01 + wave.phase) * wave.amp;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = `rgba(150, 200, 255, ${wave.alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Foam particles on shore
+  const shoreY = skyH + seaH;
+  for (const f of foams) {
+    f.prog += f.speed;
+    if (f.prog > 1) { f.prog = 0; f.x = Math.random(); }
+    const fx = f.x * W + Math.sin(time * 0.002 + f.x * 5) * 15;
+    const fy = shoreY - f.prog * 30 + Math.sin(time * 0.003 + f.x * 3) * 4;
+    ctx.globalAlpha = f.alpha * (1 - f.prog);
+    ctx.fillStyle = 'rgba(230, 240, 255, 1)';
+    ctx.beginPath();
+    ctx.arc(fx, fy, f.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Sand
+  const sandGrad = ctx.createLinearGradient(0, shoreY, 0, H);
+  sandGrad.addColorStop(0, '#b8956a');
+  sandGrad.addColorStop(0.3, '#c9a87a');
+  sandGrad.addColorStop(1, '#7a5c38');
+  ctx.fillStyle = sandGrad;
+  ctx.fillRect(0, shoreY, W, sandH + 10);
+
+  // Shore wave edge
+  ctx.beginPath();
+  ctx.globalAlpha = 0.5;
+  for (let x = 0; x <= W; x += 4) {
+    const y = shoreY + Math.sin(x * 0.02 + time * 0.003) * 5 + Math.sin(x * 0.008 - time * 0.002) * 8;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.lineTo(W, shoreY - 10);
+  ctx.lineTo(0, shoreY - 10);
+  ctx.fillStyle = 'rgba(180, 230, 255, 0.35)';
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Sand ripple lines
+  ctx.globalAlpha = 0.2;
+  for (let i = 0; i < 5; i++) {
+    const ry = shoreY + sandH * 0.2 + i * (sandH * 0.15);
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 4) {
+      const y = ry + Math.sin(x * 0.03 + i) * 2;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(100, 70, 40, 0.6)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Birds
+  for (const bird of birds) {
+    bird.x += bird.speed;
+    if (bird.x > W + 30) bird.x = -30;
+    drawBird(bird, time);
+  }
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
+const bgm = document.getElementById('bgm');
+const btn = document.getElementById('musicBtn');
+let playing = false;
+
+function toggleMusic() {
+  if (playing) {
+    bgm.pause();
+    btn.textContent = '♪';
+    btn.classList.add('paused');
+  } else {
+    bgm.play();
+    btn.textContent = '♬';
+    btn.classList.remove('paused');
+  }
+  playing = !playing;
+}
+
+// 첫 화면 클릭 시 자동 재생
+document.addEventListener('click', function startOnce(e) {
+  if (e.target.id !== 'musicBtn' && !playing) toggleMusic();
+  document.removeEventListener('click', startOnce);
+});
+</script>
+</body>
+</html>
